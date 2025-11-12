@@ -5,25 +5,54 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// GotNext Basketball Theme
+const tintColorLight = '#FF6B35'; // Energetic orange
+const tintColorDark = '#FF6B35';
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
+    text: '#1A1A1A',
+    background: '#FFFFFF',
     tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    icon: '#666666',
+    tabIconDefault: '#999999',
     tabIconSelected: tintColorLight,
+    // Basketball court colors
+    court: '#FF6B35',
+    courtSecondary: '#FF8C5A',
+    courtDark: '#E55A2B',
+    // Team colors
+    team1: '#1E88E5', // Blue
+    team2: '#F44336', // Red
+    // Status colors
+    success: '#4CAF50',
+    warning: '#FF9800',
+    error: '#F44336',
+    // Backgrounds
+    cardBackground: '#F8F9FA',
+    queueBackground: '#FFF5F0',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
+    text: '#FFFFFF',
+    background: '#0F0F0F',
     tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    icon: '#CCCCCC',
+    tabIconDefault: '#888888',
     tabIconSelected: tintColorDark,
+    // Basketball court colors
+    court: '#FF6B35',
+    courtSecondary: '#FF8C5A',
+    courtDark: '#E55A2B',
+    // Team colors
+    team1: '#42A5F5',
+    team2: '#EF5350',
+    // Status colors
+    success: '#66BB6A',
+    warning: '#FFA726',
+    error: '#EF5350',
+    // Backgrounds
+    cardBackground: '#1A1A1A',
+    queueBackground: '#1F0F0A',
   },
 };
 
