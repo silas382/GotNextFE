@@ -1,112 +1,244 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { PlayerCard } from '@/components/PlayerCard';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
+import { useGame } from '@/context/GameContext';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import React from 'react';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
-export default function TabTwoScreen() {
+export default function ExploreScreen() {
+  const { currentGame } = useGame();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+
+  const allPlayers = currentGame
+    ? [
+        ...currentGame.team1.players.filter((p): p is NonNullable<typeof p> => p !== null),
+        ...currentGame.team2.players.filter((p): p is NonNullable<typeof p> => p !== null),
+        ...currentGame.queue
+      ]
+    : [];
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.webContainer}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}>
+        <Animated.View entering={FadeIn.delay(100)}>
+          <Text style={[styles.title, { color: colors.text }]}>Game Details</Text>
+          <Text style={[styles.subtitle, { color: colors.icon }]}>
+            Manage players and view game information
+          </Text>
+        </Animated.View>
+
+        {currentGame && (
+          <>
+            {/* Game Status */}
+            <Animated.View
+              entering={FadeIn.delay(200)}
+              style={[styles.card, { backgroundColor: colors.cardBackground }]}>
+              <View style={styles.cardHeader}>
+                <IconSymbol
+                  name={
+                    currentGame.status === 'in-progress'
+                      ? 'play.circle.fill'
+                      : currentGame.status === 'ready'
+                        ? 'checkmark.circle.fill'
+                        : 'clock.fill'
+                  }
+                  size={24}
+                  color={colors.court}
+                />
+                <Text style={[styles.cardTitle, { color: colors.text }]}>Game Status</Text>
+              </View>
+              <Text style={[styles.cardValue, { color: colors.text }]}>
+                {currentGame.status === 'waiting'
+                  ? 'Waiting for players...'
+                  : currentGame.status === 'ready'
+                    ? 'Ready to start!'
+                    : 'Game in progress'}
+              </Text>
+            </Animated.View>
+
+            {/* Team Information */}
+            <Animated.View entering={FadeIn.delay(300)}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Teams</Text>
+              
+              <View style={[styles.card, { backgroundColor: colors.cardBackground }]}>
+                <View style={styles.teamInfo}>
+                  <View style={[styles.teamColorBar, { backgroundColor: currentGame.team1.color }]} />
+                  <View style={styles.teamDetails}>
+                    <Text style={[styles.teamName, { color: colors.text }]}>
+                      {currentGame.team1.name}
+                    </Text>
+                    <Text style={[styles.teamCount, { color: colors.icon }]}>
+                      {currentGame.team1.players.filter(p => p !== null).length} players
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.teamPlayers}>
+                  {currentGame.team1.players
+                    .filter((p): p is NonNullable<typeof p> => p !== null)
+                    .map((player) => (
+                      <PlayerCard key={player.id} player={player} teamColor={currentGame.team1.color} />
+                    ))}
+                </View>
+              </View>
+
+              <View style={[styles.card, { backgroundColor: colors.cardBackground }]}>
+                <View style={styles.teamInfo}>
+                  <View style={[styles.teamColorBar, { backgroundColor: currentGame.team2.color }]} />
+                  <View style={styles.teamDetails}>
+                    <Text style={[styles.teamName, { color: colors.text }]}>
+                      {currentGame.team2.name}
+                    </Text>
+                    <Text style={[styles.teamCount, { color: colors.icon }]}>
+                      {currentGame.team2.players.filter(p => p !== null).length} players
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.teamPlayers}>
+                  {currentGame.team2.players
+                    .filter((p): p is NonNullable<typeof p> => p !== null)
+                    .map((player) => (
+                      <PlayerCard key={player.id} player={player} teamColor={currentGame.team2.color} />
+                    ))}
+                </View>
+              </View>
+            </Animated.View>
+
+            {/* All Players */}
+            {allPlayers.length > 0 && (
+              <Animated.View entering={FadeIn.delay(400)}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>All Players</Text>
+                <View style={[styles.card, { backgroundColor: colors.cardBackground }]}>
+                  <View style={styles.allPlayersGrid}>
+                    {allPlayers.map((player) => (
+                      <PlayerCard key={player.id} player={player} size="small" />
+                    ))}
+                  </View>
+                </View>
+              </Animated.View>
+            )}
+          </>
+        )}
+
+        {!currentGame && (
+          <Animated.View entering={FadeIn.delay(200)}>
+            <View style={[styles.emptyState, { backgroundColor: colors.cardBackground }]}>
+              <IconSymbol name="basketball" size={48} color={colors.icon} />
+              <Text style={[styles.emptyText, { color: colors.text }]}>No active game</Text>
+              <Text style={[styles.emptySubtext, { color: colors.icon }]}>
+                Go to the home screen to start a new game
+              </Text>
+            </View>
+          </Animated.View>
+        )}
+      </ScrollView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
   },
-  titleContainer: {
+  webContainer: {
+    flex: 1,
+    maxWidth: Platform.OS === 'web' ? 1200 : '100%',
+    width: '100%',
+    alignSelf: 'center',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    marginBottom: 24,
+  },
+  card: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  cardHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+    marginBottom: 8,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  cardValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  teamInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  teamColorBar: {
+    width: 4,
+    height: 40,
+    borderRadius: 2,
+    marginRight: 12,
+  },
+  teamDetails: {
+    flex: 1,
+  },
+  teamName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  teamCount: {
+    fontSize: 14,
+  },
+  teamPlayers: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  allPlayersGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  emptyState: {
+    padding: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

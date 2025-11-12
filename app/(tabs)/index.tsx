@@ -1,98 +1,276 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { AddPlayerModal } from '@/components/AddPlayerModal';
+import { CourtView } from '@/components/CourtView';
+import { JoinButton } from '@/components/JoinButton';
+import { WinnerSelectionModal } from '@/components/WinnerSelectionModal';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Colors } from '@/constants/theme';
+import { useGame } from '@/context/GameContext';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Player } from '@/types/game';
+import { HapticFeedback } from '@/utils/haptics';
+import * as Haptics from 'expo-haptics';
+import React, { useEffect, useState } from 'react';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { currentGame, upcomingGames, addPlayerToTeam, joinGame, leaveGame, startGame, endGame, createNewGame } = useGame();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<{ teamId: string; position: number; teamName: string } | null>(null);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  useEffect(() => {
+    if (!currentGame) {
+      createNewGame();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleEmptySlotPress = (teamId: string, position: number) => {
+    if (currentGame?.status === 'in-progress') return;
+    
+    const team = teamId === 'team1' ? currentGame?.team1 : currentGame?.team2;
+    setSelectedTeam({
+      teamId,
+      position,
+      teamName: team?.name || (teamId === 'team1' ? 'Team 1' : 'Team 2'),
+    });
+    setShowAddPlayerModal(true);
+  };
+
+
+  const handleAddPlayer = (name: string) => {
+    if (!selectedTeam || !currentGame) return;
+
+    const newPlayer: Player = {
+      id: `player-${Date.now()}-${Math.random()}`,
+      name: name.trim(),
+      joinedAt: new Date(),
+    };
+
+    addPlayerToTeam(selectedTeam.teamId, newPlayer, selectedTeam.position);
+    
+    setShowAddPlayerModal(false);
+    setSelectedTeam(null);
+    HapticFeedback.notification(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleStartGame = () => {
+    if (currentGame?.status === 'ready') {
+      startGame();
+      HapticFeedback.impact(Haptics.ImpactFeedbackStyle.Heavy);
+    }
+  };
+
+  const handleEndGame = () => {
+    if (currentGame?.status === 'in-progress') {
+      setShowWinnerModal(true);
+    }
+  };
+
+  const handleSelectWinner = (winner: 'team1' | 'team2') => {
+    endGame(winner);
+    setShowWinnerModal(false);
+    HapticFeedback.notification(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const totalPlayers =
+    currentGame
+      ? currentGame.team1.players.filter(p => p !== null).length + 
+        currentGame.team2.players.filter(p => p !== null).length
+      : 0;
+
+  const isReady = currentGame?.status === 'ready' && totalPlayers === 10;
+  const isInProgress = currentGame?.status === 'in-progress';
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.webContainer}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <Animated.View entering={FadeIn.delay(100)} style={styles.header}>
+            <View style={styles.headerTop}>
+              <View>
+                <Text style={[styles.title, { color: colors.text }]}>GotNext</Text>
+                <Text style={[styles.subtitle, { color: colors.icon }]}>
+                  Basketball Pickup Games
+                </Text>
+              </View>
+              <View style={[styles.statusIndicator, { backgroundColor: colors.court }]}>
+                <IconSymbol name="basketball.fill" size={24} color="#FFFFFF" />
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* Court View */}
+          {currentGame && (
+            <Animated.View entering={FadeIn.delay(200)}>
+              <CourtView
+                game={currentGame}
+                onPlayerRemove={leaveGame}
+                onEmptySlotPress={handleEmptySlotPress}
+              />
+            </Animated.View>
+          )}
+
+
+          {/* Player Count Info */}
+          <Animated.View
+            entering={FadeIn.delay(400)}
+            style={[styles.infoCard, { backgroundColor: colors.cardBackground }]}>
+            <View style={styles.infoRow}>
+              <IconSymbol name="person.3.fill" size={20} color={colors.court} />
+              <Text style={[styles.infoText, { color: colors.text }]}>
+                {totalPlayers} / 10 players
+              </Text>
+            </View>
+            {isReady && (
+              <View style={styles.infoRow}>
+                <IconSymbol name="checkmark.circle.fill" size={20} color={colors.success} />
+                <Text style={[styles.infoText, { color: colors.success }]}>
+                  Ready to start!
+                </Text>
+              </View>
+            )}
+            {isInProgress && (
+              <View style={styles.infoRow}>
+                <IconSymbol name="play.circle.fill" size={20} color={colors.court} />
+                <Text style={[styles.infoText, { color: colors.court }]}>
+                  Game in progress
+                </Text>
+              </View>
+            )}
+          </Animated.View>
+        </ScrollView>
+
+        {/* Action Buttons */}
+        <Animated.View entering={SlideInDown.delay(500)} style={styles.footer}>
+          {isReady && (
+            <JoinButton
+              onPress={handleStartGame}
+              label="Start Game"
+              variant="primary"
+            />
+          )}
+          {isInProgress && (
+            <JoinButton
+              onPress={handleEndGame}
+              label="End Game"
+              variant="secondary"
+            />
+          )}
+          {!isReady && !isInProgress && (
+            <Text style={[styles.instructionText, { color: colors.icon }]}>
+              Tap empty circles to add players
+            </Text>
+          )}
+        </Animated.View>
+      </View>
+
+      {/* Add Player Modal */}
+      <AddPlayerModal
+        visible={showAddPlayerModal}
+        onClose={() => {
+          setShowAddPlayerModal(false);
+          setSelectedTeam(null);
+        }}
+        onAdd={handleAddPlayer}
+        teamName={selectedTeam?.teamName}
+        position={selectedTeam?.position}
+      />
+
+      {/* Winner Selection Modal */}
+      {currentGame && (
+        <WinnerSelectionModal
+          visible={showWinnerModal}
+          team1={currentGame.team1}
+          team2={currentGame.team2}
+          onSelectWinner={handleSelectWinner}
+          onClose={() => setShowWinnerModal(false)}
+        />
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+  },
+  webContainer: {
+    flex: 1,
+    maxWidth: Platform.OS === 'web' ? 1200 : '100%',
+    width: '100%',
+    alignSelf: 'center',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  header: {
+    marginBottom: 24,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  statusIndicator: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  infoCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginVertical: 4,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  infoText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
+  footer: {
+    position: 'absolute',
     bottom: 0,
     left: 0,
-    position: 'absolute',
+    right: 0,
+    padding: 16,
+    paddingBottom: 32,
+    backgroundColor: 'transparent',
+  },
+  instructionText: {
+    fontSize: 14,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
