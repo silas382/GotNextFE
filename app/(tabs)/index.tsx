@@ -123,7 +123,21 @@ export default function HomeScreen() {
       startGame();
       setShowBasketballAnimation(true);
       HapticFeedback.impact(Haptics.ImpactFeedbackStyle.Heavy);
+    } else {
+      // Otherwise, show confirmation modal
+      setShowStartGameModal(true);
     }
+  };
+
+  const handleConfirmStartGame = () => {
+    startGame();
+    setShowStartGameModal(false);
+    setShowBasketballAnimation(true);
+    HapticFeedback.impact(Haptics.ImpactFeedbackStyle.Heavy);
+  };
+
+  const handleCancelStartGame = () => {
+    setShowStartGameModal(false);
   };
 
   const handleEndGame = () => {
