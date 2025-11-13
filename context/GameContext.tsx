@@ -7,7 +7,7 @@ interface GameContextType {
   upcomingGames: Team[];
   addPlayerToTeam: (teamId: string, player: Player, position?: number) => Promise<void>;
   addPlayerToQueueTeam: (teamIndex: number, position: number, player: Player) => Promise<void>;
-  leaveGame: (playerId: string) => void;
+  leaveGame: (playerId: string) => Promise<void>;
   substitutePlayer: (fromPlayerId: string, toPlayer: Player) => void;
   createNewGame: () => void;
   startGame: () => void;
@@ -78,14 +78,42 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const addPlayerToTeam = useCallback(async (teamId: string, player: Player, position?: number) => {
     // Call backend API to add player
-    console.log('Adding player to backend:', player.name);
+    console.log('\n=== ADDING PLAYER TO TEAM ===');
+    console.log('Player name:', player.name);
+    console.log('Player object before API call:', player);
+    
     const response = await apiService.addPlayer(player.name);
+    
+    console.log('API Response:', response);
+    console.log('Response has error:', !!response.error);
+    console.log('Response data:', response.data);
+    
     if (response.error) {
-      console.error('Failed to add player to backend:', response.error);
-      // Continue with local state update even if API call fails
+      console.error('❌ Failed to add player to backend:', response.error);
+      console.warn('⚠️  Continuing with local state update only (no backendId)');
     } else {
-      console.log('Successfully added player to backend:', response.data);
+      console.log('✅ Successfully added player to backend');
+      console.log('Response data:', response.data);
+      
+      if (response.data) {
+        console.log('Response data.id:', response.data.id);
+        console.log('Response data.name:', response.data.name);
+        player.backendId = response.data.id;
+        console.log('✅ Stored backend ID:', player.backendId, 'for player:', player.name);
+      } else {
+        console.error('❌ Response.data is undefined or null!');
+        console.error('Full response:', JSON.stringify(response, null, 2));
+      }
     }
+
+    // Create player with backendId for state
+    const playerWithBackendId: Player = response.data 
+      ? { ...player, backendId: response.data.id }
+      : player;
+    
+    console.log('Player with backendId for state:', playerWithBackendId);
+    console.log('Has backendId:', !!playerWithBackendId.backendId);
+    console.log('BackendId value:', playerWithBackendId.backendId);
 
     setCurrentGame((prev) => {
       if (!prev) {
@@ -110,9 +138,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // Add player to the specified team at the specified position
         const players: (Player | null)[] = [null, null, null, null, null];
         if (position !== undefined && position >= 0 && position < 5) {
-          players[position] = player;
+          players[position] = playerWithBackendId;
         } else {
-          players[0] = player;
+          players[0] = playerWithBackendId;
         }
         if (teamId === 'team1') {
           newGame.team1.players = players;
@@ -138,12 +166,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // Add player at specified position
       if (position !== undefined && position >= 0 && position < 5) {
         if (currentPlayers[position] === null) {
-          currentPlayers[position] = player;
+          currentPlayers[position] = playerWithBackendId;
         } else {
           // Slot is taken, find next empty slot
           const nextEmpty = currentPlayers.findIndex(p => p === null);
           if (nextEmpty !== -1) {
-            currentPlayers[nextEmpty] = player;
+            currentPlayers[nextEmpty] = playerWithBackendId;
           } else {
             return prev; // Team is full
           }
@@ -152,7 +180,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // No position specified, add to first empty slot
         const firstEmpty = currentPlayers.findIndex(p => p === null);
         if (firstEmpty !== -1) {
-          currentPlayers[firstEmpty] = player;
+          currentPlayers[firstEmpty] = playerWithBackendId;
         } else {
           return prev; // Team is full
         }
@@ -264,14 +292,42 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const addPlayerToQueueTeam = useCallback(async (teamIndex: number, position: number, player: Player) => {
     // Call backend API to add player
-    console.log('Adding player to backend queue:', player.name);
+    console.log('\n=== ADDING PLAYER TO QUEUE TEAM ===');
+    console.log('Player name:', player.name);
+    console.log('Player object before API call:', player);
+    
     const response = await apiService.addPlayer(player.name);
+    
+    console.log('API Response:', response);
+    console.log('Response has error:', !!response.error);
+    console.log('Response data:', response.data);
+    
     if (response.error) {
-      console.error('Failed to add player to backend:', response.error);
-      // Continue with local state update even if API call fails
+      console.error('❌ Failed to add player to backend:', response.error);
+      console.warn('⚠️  Continuing with local state update only (no backendId)');
     } else {
-      console.log('Successfully added player to backend:', response.data);
+      console.log('✅ Successfully added player to backend');
+      console.log('Response data:', response.data);
+      
+      if (response.data) {
+        console.log('Response data.id:', response.data.id);
+        console.log('Response data.name:', response.data.name);
+        player.backendId = response.data.id;
+        console.log('✅ Stored backend ID:', player.backendId, 'for player:', player.name);
+      } else {
+        console.error('❌ Response.data is undefined or null!');
+        console.error('Full response:', JSON.stringify(response, null, 2));
+      }
     }
+
+    // Create player with backendId for state
+    const playerWithBackendId: Player = response.data 
+      ? { ...player, backendId: response.data.id }
+      : player;
+    
+    console.log('Player with backendId for state:', playerWithBackendId);
+    console.log('Has backendId:', !!playerWithBackendId.backendId);
+    console.log('BackendId value:', playerWithBackendId.backendId);
 
     setUpcomingGames((prevUpcoming) => {
       // Ensure we have 3 teams with consistent IDs
@@ -327,12 +383,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       
       // Add player at position if slot is empty
       if (position >= 0 && position < 5 && players[position] === null) {
-        players[position] = player;
+        players[position] = playerWithBackendId;
       } else if (position >= 0 && position < 5) {
         // Slot is taken, find next empty slot
         const nextEmpty = players.findIndex(p => p === null);
         if (nextEmpty !== -1) {
-          players[nextEmpty] = player;
+          players[nextEmpty] = playerWithBackendId;
+        }
+      } else {
+        // No position specified, add to first empty slot
+        const firstEmpty = players.findIndex(p => p === null);
+        if (firstEmpty !== -1) {
+          players[firstEmpty] = playerWithBackendId;
         }
       }
       
@@ -343,7 +405,69 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const leaveGame = useCallback((playerId: string) => {
+  const leaveGame = useCallback(async (playerId: string) => {
+    // Find the player to get their backend ID for deletion
+    let playerToDelete: Player | null = null;
+    let backendId: number | undefined;
+    
+    // Check current game teams
+    if (currentGame) {
+      const allPlayers = [
+        ...currentGame.team1.players.filter((p): p is Player => p !== null),
+        ...currentGame.team2.players.filter((p): p is Player => p !== null),
+        ...currentGame.queue.filter((p): p is Player => p !== null),
+      ];
+      playerToDelete = allPlayers.find(p => p.id === playerId) || null;
+    }
+    
+    // Check upcoming games if not found
+    if (!playerToDelete) {
+      const upcomingPlayers = upcomingGames.flatMap(team => 
+        team.players.filter((p): p is Player => p !== null)
+      );
+      playerToDelete = upcomingPlayers.find(p => p.id === playerId) || null;
+    }
+    
+    // Call backend API to delete player if we have the backend ID
+    console.log('\n=== DELETING PLAYER FROM BACKEND ===');
+    console.log('Player to delete:', playerToDelete?.name || 'NOT FOUND');
+    console.log('Player object:', playerToDelete);
+    console.log('Player has backendId:', playerToDelete?.backendId);
+    
+    if (playerToDelete && playerToDelete.backendId) {
+      backendId = playerToDelete.backendId;
+      console.log('✅ Found backend ID:', backendId);
+      console.log('Calling DELETE API...');
+      
+      try {
+        const deleteResponse = await apiService.deletePlayer(backendId);
+        
+        if (deleteResponse.error) {
+          console.error('❌ FAILED to delete player from backend');
+          console.error('Error:', deleteResponse.error);
+          console.error('This means the player will still be in the backend queue!');
+          console.warn('⚠️  Continuing with local state update only');
+        } else {
+          console.log('✅✅✅ SUCCESSFULLY deleted player from backend');
+          console.log('Response:', deleteResponse.data);
+        }
+      } catch (error) {
+        console.error('❌ EXCEPTION while deleting from backend:', error);
+        console.warn('⚠️  Continuing with local state update only');
+      }
+    } else if (playerToDelete) {
+      console.error('❌❌❌ Player has NO backend ID stored!');
+      console.error('Player name:', playerToDelete.name);
+      console.error('Player ID:', playerToDelete.id);
+      console.error('Player object:', JSON.stringify(playerToDelete, null, 2));
+      console.error('This means the player was added before backendId tracking was implemented');
+      console.error('OR the backendId was not stored when the player was added');
+      console.warn('⚠️  Player will only be removed from local state, NOT from backend queue');
+    } else {
+      console.error('❌ Player not found in local state');
+      console.error('Player ID:', playerId);
+    }
+    
     // Remove from upcoming games first
     setUpcomingGames((prev) => {
       const updated = prev.map((team) => ({
@@ -419,7 +543,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         queue: queuePlayers,
       };
     });
-  }, []);
+  }, [currentGame, upcomingGames]);
 
   const substitutePlayer = useCallback((fromPlayerId: string, toPlayer: Player) => {
     setCurrentGame((prev) => {
