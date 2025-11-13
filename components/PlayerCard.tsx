@@ -59,24 +59,25 @@ export function PlayerCard({
           style={[
             styles.initials,
             {
-              fontSize: size === 'small' ? 14 : size === 'large' ? 24 : 18,
+              fontSize: size === 'small' ? 12 : size === 'large' ? 20 : 16,
               color: '#FFFFFF',
+              marginBottom: 2,
             },
           ]}>
           {getInitials(player.name)}
         </Text>
+        <Text
+          style={[
+            styles.nameOnCircle,
+            {
+              fontSize: size === 'small' ? 8 : size === 'large' ? 12 : 10,
+              color: '#FFFFFF',
+            },
+          ]}
+          numberOfLines={1}>
+          {player.name}
+        </Text>
       </AvatarComponent>
-      <Text
-        style={[
-          styles.name,
-          {
-            fontSize: size === 'small' ? 10 : size === 'large' ? 14 : 12,
-            color: colors.text,
-          },
-        ]}
-        numberOfLines={1}>
-        {player.name}
-      </Text>
       {showActions && (onRemove || onSubstitute) && (
         <View style={styles.actions}>
           {onSubstitute && (
@@ -113,6 +114,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    paddingHorizontal: 4,
   },
   clickable: {
     cursor: 'pointer',
@@ -120,11 +122,11 @@ const styles = StyleSheet.create({
   initials: {
     fontWeight: 'bold',
   },
-  name: {
-    marginTop: 4,
-    fontWeight: '600',
+  nameOnCircle: {
+    fontWeight: '500',
     textAlign: 'center',
-    maxWidth: 100,
+    maxWidth: '100%',
+    opacity: 0.95,
   },
   actions: {
     flexDirection: 'row',
