@@ -74,9 +74,9 @@ export default function HomeScreen() {
     }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (playerToDelete) {
-      leaveGame(playerToDelete.id);
+      await leaveGame(playerToDelete.id);
       setShowDeleteModal(false);
       setPlayerToDelete(null);
       HapticFeedback.notification(Haptics.NotificationFeedbackType.Success);

@@ -29,10 +29,11 @@ class ApiService {
     try {
       // For POST requests with query params, don't send Content-Type: application/json
       // Spring Boot @RequestParam expects form data or query params, not JSON body
+      // For DELETE requests, also don't set Content-Type (backend uses @PathVariable)
       const headers: Record<string, string> = {};
-      if (method === 'POST' && url.includes('?')) {
-        // POST with query params - don't set Content-Type, let browser set it
-        // This allows Spring Boot to read @RequestParam correctly
+      if ((method === 'POST' && url.includes('?')) || method === 'DELETE') {
+        // POST with query params or DELETE - don't set Content-Type, let browser set it
+        // This allows Spring Boot to read @RequestParam/@PathVariable correctly
       } else {
         headers['Content-Type'] = 'application/json';
       }
@@ -60,7 +61,12 @@ class ApiService {
 
       const contentType = response.headers.get('content-type');
       let data;
-      if (contentType && contentType.includes('application/json')) {
+      // DELETE endpoint returns ResponseEntity<String> which is plain text, not JSON
+      if (method === 'DELETE') {
+        const text = await response.text();
+        console.log(`[API] ✅ DELETE Response:`, text);
+        data = text;
+      } else if (contentType && contentType.includes('application/json')) {
         data = await response.json();
         console.log(`[API] ✅ SUCCESS - JSON Response:`, data);
       } else {
@@ -145,9 +151,37 @@ class ApiService {
   // Backend: @DeleteMapping("/{id}") with @PathVariable Long id
   // Endpoint: DELETE /api/queue/{id}
   async deletePlayer(id: number): Promise<ApiResponse<string>> {
-    return this.request<string>(`/${id}`, {
+    if (!id || id <= 0) {
+      console.error('[API] Cannot delete player: invalid ID', id);
+      return { error: 'Player ID must be a positive number' };
+    }
+
+    console.log('\n=== DELETING PLAYER FROM BACKEND ===');
+    console.log('Player ID to delete:', id);
+    console.log('API Base URL:', API_BASE_URL);
+    console.log('Endpoint: /' + id);
+    console.log('Full URL will be:', `${API_BASE_URL}/${id}`);
+    console.log('Expected backend endpoint: DELETE http://localhost:8080/api/queue/' + id);
+    
+    const endpoint = `/${id}`;
+    const result = await this.request<string>(endpoint, {
       method: 'DELETE',
     });
+    
+    console.log('\n=== DELETE RESULT ===');
+    console.log('Success:', !result.error);
+    console.log('Has error:', !!result.error);
+    console.log('Error:', result.error);
+    console.log('Data:', result.data);
+    console.log('Full result:', JSON.stringify(result, null, 2));
+    
+    if (result.error) {
+      console.error('❌ DELETE FAILED - Player will still be in backend queue!');
+    } else {
+      console.log('✅ DELETE SUCCEEDED - Player should be removed from backend queue');
+    }
+    
+    return result;
   }
 }
 

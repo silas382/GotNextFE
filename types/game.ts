@@ -3,6 +3,7 @@ export interface Player {
   name: string;
   avatar?: string;
   joinedAt: Date;
+  backendId?: number; // Backend database ID for API calls
 }
 
 export interface Team {
