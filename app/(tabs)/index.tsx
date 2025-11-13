@@ -88,7 +88,7 @@ export default function HomeScreen() {
     setPlayerToDelete(null);
   };
 
-  const handleAddPlayer = (name: string) => {
+  const handleAddPlayer = async (name: string) => {
     if (!selectedTeam || !currentGame) return;
 
     const newPlayer: Player = {
@@ -101,10 +101,10 @@ export default function HomeScreen() {
       // Extract team index from teamId (format: "queue-team-0")
       const teamIndexMatch = selectedTeam.teamId.match(/queue-team-(\d+)/);
       const teamIndex = teamIndexMatch ? parseInt(teamIndexMatch[1], 10) : 0;
-      addPlayerToQueueTeam(teamIndex, selectedTeam.position, newPlayer);
+      await addPlayerToQueueTeam(teamIndex, selectedTeam.position, newPlayer);
     } else {
       // Add to court team
-      addPlayerToTeam(selectedTeam.teamId, newPlayer, selectedTeam.position);
+      await addPlayerToTeam(selectedTeam.teamId, newPlayer, selectedTeam.position);
     }
     
     setShowAddPlayerModal(false);

@@ -1,11 +1,12 @@
 import { Game, Player, Team } from '@/types/game';
+import { apiService } from '@/utils/api';
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
 
 interface GameContextType {
   currentGame: Game | null;
   upcomingGames: Team[];
-  addPlayerToTeam: (teamId: string, player: Player, position?: number) => void;
-  addPlayerToQueueTeam: (teamIndex: number, position: number, player: Player) => void;
+  addPlayerToTeam: (teamId: string, player: Player, position?: number) => Promise<void>;
+  addPlayerToQueueTeam: (teamIndex: number, position: number, player: Player) => Promise<void>;
   leaveGame: (playerId: string) => void;
   substitutePlayer: (fromPlayerId: string, toPlayer: Player) => void;
   createNewGame: () => void;
@@ -75,7 +76,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     initializeQueueTeams();
   }, [initializeQueueTeams]);
 
-  const addPlayerToTeam = useCallback((teamId: string, player: Player, position?: number) => {
+  const addPlayerToTeam = useCallback(async (teamId: string, player: Player, position?: number) => {
+    // Call backend API to add player
+    console.log('Adding player to backend:', player.name);
+    const response = await apiService.addPlayer(player.name);
+    if (response.error) {
+      console.error('Failed to add player to backend:', response.error);
+      // Continue with local state update even if API call fails
+    } else {
+      console.log('Successfully added player to backend:', response.data);
+    }
+
     setCurrentGame((prev) => {
       if (!prev) {
         const newGame: Game = {
@@ -251,7 +262,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     });
   }, [initializeQueueTeams]);
 
-  const addPlayerToQueueTeam = useCallback((teamIndex: number, position: number, player: Player) => {
+  const addPlayerToQueueTeam = useCallback(async (teamIndex: number, position: number, player: Player) => {
+    // Call backend API to add player
+    console.log('Adding player to backend queue:', player.name);
+    const response = await apiService.addPlayer(player.name);
+    if (response.error) {
+      console.error('Failed to add player to backend:', response.error);
+      // Continue with local state update even if API call fails
+    } else {
+      console.log('Successfully added player to backend:', response.data);
+    }
+
     setUpcomingGames((prevUpcoming) => {
       // Ensure we have 3 teams with consistent IDs
       let updated = [...prevUpcoming];
