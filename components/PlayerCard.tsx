@@ -78,6 +78,18 @@ export function PlayerCard({
           {player.name}
         </Text>
       </AvatarComponent>
+      <Text
+        style={[
+          styles.name,
+          {
+            fontSize: size === 'small' ? 10 : size === 'large' ? 14 : 12,
+            color: colors.text,
+          },
+        ]}
+        numberOfLines={2}
+        ellipsizeMode="tail">
+        {player.name}
+      </Text>
       {showActions && (onRemove || onSubstitute) && (
         <View style={styles.actions}>
           {onSubstitute && (
@@ -125,8 +137,8 @@ const styles = StyleSheet.create({
   nameOnCircle: {
     fontWeight: '500',
     textAlign: 'center',
-    maxWidth: '100%',
-    opacity: 0.95,
+    maxWidth: 100,
+    minHeight: 28,
   },
   actions: {
     flexDirection: 'row',

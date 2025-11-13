@@ -29,7 +29,6 @@ export function BasketballAnimation({ visible, onComplete }: BasketballAnimation
   const bounceY = useSharedValue(0);
   const opacity = useSharedValue(0);
   const textScale = useSharedValue(0);
-  const particles = useSharedValue(0);
 
   useEffect(() => {
     if (visible) {
@@ -39,7 +38,6 @@ export function BasketballAnimation({ visible, onComplete }: BasketballAnimation
       bounceY.value = 0;
       opacity.value = 0;
       textScale.value = 0;
-      particles.value = 0;
 
       // Start animations
       opacity.value = withTiming(1, { duration: 200 });
@@ -82,16 +80,6 @@ export function BasketballAnimation({ visible, onComplete }: BasketballAnimation
         withSpring(1, { damping: 10 })
       );
 
-      // Particles animation
-      particles.value = withRepeat(
-        withTiming(1, {
-          duration: 1000,
-          easing: Easing.out(Easing.quad),
-        }),
-        -1,
-        true
-      );
-
       // Auto-dismiss after 3 seconds
       const timer = setTimeout(() => {
         opacity.value = withTiming(0, { duration: 300 }, () => {
@@ -123,122 +111,6 @@ export function BasketballAnimation({ visible, onComplete }: BasketballAnimation
     };
   });
 
-  // Create all particle styles at the top level (React hooks rule)
-  const particle0Style = useAnimatedStyle(() => {
-    const angle = (0 * 45) * (Math.PI / 180);
-    const distance = particles.value * 100;
-    return {
-      transform: [
-        { translateX: Math.cos(angle) * distance },
-        { translateY: Math.sin(angle) * distance },
-        { scale: 1 - particles.value },
-      ],
-      opacity: 1 - particles.value,
-    };
-  });
-
-  const particle1Style = useAnimatedStyle(() => {
-    const angle = (1 * 45) * (Math.PI / 180);
-    const distance = particles.value * 100;
-    return {
-      transform: [
-        { translateX: Math.cos(angle) * distance },
-        { translateY: Math.sin(angle) * distance },
-        { scale: 1 - particles.value },
-      ],
-      opacity: 1 - particles.value,
-    };
-  });
-
-  const particle2Style = useAnimatedStyle(() => {
-    const angle = (2 * 45) * (Math.PI / 180);
-    const distance = particles.value * 100;
-    return {
-      transform: [
-        { translateX: Math.cos(angle) * distance },
-        { translateY: Math.sin(angle) * distance },
-        { scale: 1 - particles.value },
-      ],
-      opacity: 1 - particles.value,
-    };
-  });
-
-  const particle3Style = useAnimatedStyle(() => {
-    const angle = (3 * 45) * (Math.PI / 180);
-    const distance = particles.value * 100;
-    return {
-      transform: [
-        { translateX: Math.cos(angle) * distance },
-        { translateY: Math.sin(angle) * distance },
-        { scale: 1 - particles.value },
-      ],
-      opacity: 1 - particles.value,
-    };
-  });
-
-  const particle4Style = useAnimatedStyle(() => {
-    const angle = (4 * 45) * (Math.PI / 180);
-    const distance = particles.value * 100;
-    return {
-      transform: [
-        { translateX: Math.cos(angle) * distance },
-        { translateY: Math.sin(angle) * distance },
-        { scale: 1 - particles.value },
-      ],
-      opacity: 1 - particles.value,
-    };
-  });
-
-  const particle5Style = useAnimatedStyle(() => {
-    const angle = (5 * 45) * (Math.PI / 180);
-    const distance = particles.value * 100;
-    return {
-      transform: [
-        { translateX: Math.cos(angle) * distance },
-        { translateY: Math.sin(angle) * distance },
-        { scale: 1 - particles.value },
-      ],
-      opacity: 1 - particles.value,
-    };
-  });
-
-  const particle6Style = useAnimatedStyle(() => {
-    const angle = (6 * 45) * (Math.PI / 180);
-    const distance = particles.value * 100;
-    return {
-      transform: [
-        { translateX: Math.cos(angle) * distance },
-        { translateY: Math.sin(angle) * distance },
-        { scale: 1 - particles.value },
-      ],
-      opacity: 1 - particles.value,
-    };
-  });
-
-  const particle7Style = useAnimatedStyle(() => {
-    const angle = (7 * 45) * (Math.PI / 180);
-    const distance = particles.value * 100;
-    return {
-      transform: [
-        { translateX: Math.cos(angle) * distance },
-        { translateY: Math.sin(angle) * distance },
-        { scale: 1 - particles.value },
-      ],
-      opacity: 1 - particles.value,
-    };
-  });
-
-  const particleStyles = [
-    particle0Style,
-    particle1Style,
-    particle2Style,
-    particle3Style,
-    particle4Style,
-    particle5Style,
-    particle6Style,
-    particle7Style,
-  ];
-
   if (!visible) return null;
 
   return (
@@ -260,18 +132,6 @@ export function BasketballAnimation({ visible, onComplete }: BasketballAnimation
         <Text style={[styles.gameText, { color: colors.court }]}>GAME</Text>
         <Text style={[styles.startedText, { color: colors.court }]}>STARTED!</Text>
       </Animated.View>
-
-      {/* Particles */}
-      {particleStyles.map((particleStyle, index) => (
-        <Animated.View
-          key={index}
-          style={[
-            styles.particle,
-            { backgroundColor: colors.court },
-            particleStyle,
-          ]}
-        />
-      ))}
     </View>
   );
 }
@@ -357,12 +217,6 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 4,
-  },
-  particle: {
-    position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
   },
 });
 
