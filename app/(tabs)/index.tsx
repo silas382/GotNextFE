@@ -1,6 +1,9 @@
 import { AddPlayerModal } from '@/components/AddPlayerModal';
+import { BasketballAnimation } from '@/components/BasketballAnimation';
 import { CourtView } from '@/components/CourtView';
+import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { JoinButton } from '@/components/JoinButton';
+import { StartGameConfirmModal } from '@/components/StartGameConfirmModal';
 import { WinnerSelectionModal } from '@/components/WinnerSelectionModal';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
@@ -19,7 +22,11 @@ export default function HomeScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const [showAddPlayerModal, setShowAddPlayerModal] = useState(false);
   const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showStartGameModal, setShowStartGameModal] = useState(false);
+  const [showBasketballAnimation, setShowBasketballAnimation] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<{ teamId: string; position: number; teamName: string } | null>(null);
+  const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
 
   useEffect(() => {
     if (!currentGame) {
@@ -40,6 +47,26 @@ export default function HomeScreen() {
     setShowAddPlayerModal(true);
   };
 
+  const handlePlayerPress = (player: Player) => {
+    if (currentGame?.status === 'in-progress') return;
+    setPlayerToDelete(player);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (playerToDelete) {
+      leaveGame(playerToDelete.id);
+      setShowDeleteModal(false);
+      setPlayerToDelete(null);
+      HapticFeedback.notification(Haptics.NotificationFeedbackType.Success);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setPlayerToDelete(null);
+  };
+
 
   const handleAddPlayer = (name: string) => {
     if (!selectedTeam || !currentGame) return;
@@ -58,10 +85,31 @@ export default function HomeScreen() {
   };
 
   const handleStartGame = () => {
-    if (currentGame?.status === 'ready') {
+    if (!currentGame) return;
+    
+    const totalPlayers = (currentGame.team1.players.filter(p => p !== null).length +
+      currentGame.team2.players.filter(p => p !== null).length);
+    
+    // If 10 players, start immediately
+    if (totalPlayers === 10) {
       startGame();
+      setShowBasketballAnimation(true);
       HapticFeedback.impact(Haptics.ImpactFeedbackStyle.Heavy);
+    } else {
+      // Otherwise, show confirmation modal
+      setShowStartGameModal(true);
     }
+  };
+
+  const handleConfirmStartGame = () => {
+    startGame();
+    setShowStartGameModal(false);
+    setShowBasketballAnimation(true);
+    HapticFeedback.impact(Haptics.ImpactFeedbackStyle.Heavy);
+  };
+
+  const handleCancelStartGame = () => {
+    setShowStartGameModal(false);
   };
 
   const handleEndGame = () => {
@@ -112,6 +160,7 @@ export default function HomeScreen() {
             <Animated.View entering={FadeIn.delay(200)}>
               <CourtView
                 game={currentGame}
+                onPlayerPress={handlePlayerPress}
                 onPlayerRemove={leaveGame}
                 onEmptySlotPress={handleEmptySlotPress}
               />
@@ -150,7 +199,7 @@ export default function HomeScreen() {
 
         {/* Action Buttons */}
         <Animated.View entering={SlideInDown.delay(500)} style={styles.footer}>
-          {isReady && (
+          {(isReady || (currentGame && currentGame.status === 'waiting')) && (
             <JoinButton
               onPress={handleStartGame}
               label="Start Game"
@@ -194,6 +243,33 @@ export default function HomeScreen() {
           onClose={() => setShowWinnerModal(false)}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        visible={showDeleteModal}
+        player={playerToDelete}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+
+      {/* Start Game Confirmation Modal */}
+      {currentGame && (
+        <StartGameConfirmModal
+          visible={showStartGameModal}
+          playerCount={
+            currentGame.team1.players.filter(p => p !== null).length +
+            currentGame.team2.players.filter(p => p !== null).length
+          }
+          onConfirm={handleConfirmStartGame}
+          onCancel={handleCancelStartGame}
+        />
+      )}
+
+      {/* Basketball Animation */}
+      <BasketballAnimation
+        visible={showBasketballAnimation}
+        onComplete={() => setShowBasketballAnimation(false)}
+      />
     </View>
   );
 }
