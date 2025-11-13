@@ -74,7 +74,8 @@ export function PlayerCard({
             color: colors.text,
           },
         ]}
-        numberOfLines={1}>
+        numberOfLines={2}
+        ellipsizeMode="tail">
         {player.name}
       </Text>
       {showActions && (onRemove || onSubstitute) && (
@@ -125,6 +126,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     maxWidth: 100,
+    minHeight: 28,
   },
   actions: {
     flexDirection: 'row',

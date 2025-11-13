@@ -2,28 +2,39 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Team } from '@/types/game';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { PlayerCard } from './PlayerCard';
 
 interface UpcomingTeamsProps {
   teams: Team[];
   onPlayerRemove?: (playerId: string) => void;
+  onPlayerPress?: (playerId: string) => void;
+  onEmptySlotPress?: (teamIndex: number, position: number) => void;
 }
 
-export function UpcomingTeams({ teams, onPlayerRemove }: UpcomingTeamsProps) {
+export function UpcomingTeams({ teams, onPlayerRemove, onPlayerPress, onEmptySlotPress }: UpcomingTeamsProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  // Show only next 3 teams, always show component even if empty
-  const displayTeams = teams.slice(0, 3);
+  // Always show 3 teams (pad with empty teams if needed, maintaining consistent IDs)
+  const displayTeams = [...teams];
+  while (displayTeams.length < 3) {
+    const index = displayTeams.length;
+    displayTeams.push({
+      id: `queue-team-${index}`,
+      name: `Team ${index + 3}`,
+      players: [null, null, null, null, null],
+      color: index % 2 === 0 ? '#1E88E5' : '#F44336',
+    });
+  }
   
-  // If no teams, show empty state with placeholder slots
-  if (displayTeams.length === 0) {
-    // Create 3 empty teams to show the structure
+  // If no teams, show empty state with placeholder slots (shouldn't happen now, but keep as fallback)
+  if (teams.length === 0) {
+    // Create 3 empty teams to show the structure with consistent IDs
     const emptyTeams: Team[] = Array.from({ length: 3 }).map((_, index) => ({
-      id: `empty-team-${index}`,
-      name: `Team ${index + 1}`,
+      id: `queue-team-${index}`,
+      name: `Team ${index + 3}`,
       players: [null, null, null, null, null],
       color: index % 2 === 0 ? '#1E88E5' : '#F44336',
     }));
@@ -44,7 +55,11 @@ export function UpcomingTeams({ teams, onPlayerRemove }: UpcomingTeamsProps) {
               </View>
               <View style={styles.playersContainer}>
                 {Array.from({ length: 5 }).map((_, index) => (
-                  <View key={`empty-${index}`} style={styles.emptySlot}>
+                  <Pressable
+                    key={`empty-${index}`}
+                    style={styles.emptySlot}
+                    onPress={onEmptySlotPress ? () => onEmptySlotPress(index, index) : undefined}
+                    disabled={!onEmptySlotPress}>
                     <View
                       style={[
                         styles.emptyCircle,
@@ -55,7 +70,7 @@ export function UpcomingTeams({ teams, onPlayerRemove }: UpcomingTeamsProps) {
                       ]}>
                       <Text style={[styles.emptyText, { color: colors.court }]}>+</Text>
                     </View>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             </View>
@@ -91,13 +106,17 @@ export function UpcomingTeams({ teams, onPlayerRemove }: UpcomingTeamsProps) {
                       player={player}
                       teamColor={team.color}
                       size="small"
-                      clickable={!!onPlayerRemove}
-                      onPress={onPlayerRemove ? () => onPlayerRemove(player.id) : undefined}
+                      clickable={!!onPlayerPress}
+                      onPress={onPlayerPress ? () => onPlayerPress(player.id) : undefined}
                     />
                   );
                 } else {
                   return (
-                    <View key={`empty-${index}`} style={styles.emptySlot}>
+                    <Pressable
+                      key={`empty-${index}`}
+                      style={styles.emptySlot}
+                      onPress={onEmptySlotPress ? () => onEmptySlotPress(teamIndex, index) : undefined}
+                      disabled={!onEmptySlotPress}>
                       <View
                         style={[
                           styles.emptyCircle,
@@ -108,7 +127,7 @@ export function UpcomingTeams({ teams, onPlayerRemove }: UpcomingTeamsProps) {
                         ]}>
                         <Text style={[styles.emptyText, { color: colors.court }]}>+</Text>
                       </View>
-                    </View>
+                    </Pressable>
                   );
                 }
               })}
@@ -172,6 +191,7 @@ const styles = StyleSheet.create({
     height: 60,
     alignItems: 'center',
     justifyContent: 'center',
+    cursor: 'pointer',
   },
   emptyCircle: {
     width: 52,

@@ -43,8 +43,8 @@ export function CourtView({ game, onPlayerPress, onPlayerRemove, onEmptySlotPres
                   teamColor={team.color}
                   size="medium"
                   showActions={game.status === 'ready'}
-                  clickable={!!onPlayerRemove && (game.status === 'waiting' || game.status === 'ready')}
-                  onPress={onPlayerRemove ? () => onPlayerRemove(player.id) : undefined}
+                  clickable={!!onPlayerPress && (game.status === 'waiting' || game.status === 'ready')}
+                  onPress={onPlayerPress ? () => onPlayerPress(player.id) : undefined}
                 />
               </Animated.View>
             );
