@@ -1,6 +1,6 @@
 // API service for backend communication
-// Backend runs on localhost:8080 with base path /api/queue
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api/queue';
+// Backend runs on localhost:8081 with base path /api/queue (Docker container)
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8081/api/queue';
 
 interface ApiResponse<T> {
   data?: T;
@@ -85,7 +85,7 @@ class ApiService {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         console.error(`[API] 🔴 NETWORK ERROR - Check if backend is running at: ${API_BASE_URL}`);
         console.error(`[API] Make sure:`);
-        console.error(`[API] 1. Backend server is running on port 8080`);
+        console.error(`[API] 1. Backend server is running on port 8081`);
         console.error(`[API] 2. CORS is configured to allow requests from frontend`);
         console.error(`[API] 3. No firewall is blocking the connection`);
       }
@@ -161,7 +161,7 @@ class ApiService {
     console.log('API Base URL:', API_BASE_URL);
     console.log('Endpoint: /' + id);
     console.log('Full URL will be:', `${API_BASE_URL}/${id}`);
-    console.log('Expected backend endpoint: DELETE http://localhost:8080/api/queue/' + id);
+    console.log('Expected backend endpoint: DELETE http://localhost:8081/api/queue/' + id);
     
     const endpoint = `/${id}`;
     const result = await this.request<string>(endpoint, {
